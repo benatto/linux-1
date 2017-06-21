@@ -24,6 +24,7 @@ void xpfo_kmap(void *kaddr, struct page *page);
 void xpfo_kunmap(void *kaddr, struct page *page);
 void xpfo_alloc_pages(struct page *page, int order, gfp_t gfp);
 void xpfo_free_pages(struct page *page, int order);
+inline int xpfo_is_unmapped(struct page *page);
 
 #else /* !CONFIG_XPFO */
 
@@ -31,7 +32,7 @@ static inline void xpfo_kmap(void *kaddr, struct page *page) { }
 static inline void xpfo_kunmap(void *kaddr, struct page *page) { }
 static inline void xpfo_alloc_pages(struct page *page, int order, gfp_t gfp) { }
 static inline void xpfo_free_pages(struct page *page, int order) { }
-
+static inline int xpfo_is_unmapped(struct page *page) { return 0; }
 #endif /* CONFIG_XPFO */
 
 #endif /* _LINUX_XPFO_H */
