@@ -19,6 +19,7 @@
 inline void set_kpte(void *kaddr, struct page *page, pgprot_t prot)
 {
 	unsigned int level;
+	pgprot_t msk_clr;
 	pte_t *pte = lookup_address((unsigned long)kaddr, &level);
 
 	BUG_ON(!pte);
@@ -28,15 +29,21 @@ inline void set_kpte(void *kaddr, struct page *page, pgprot_t prot)
 		set_pte_atomic(pte, pfn_pte(page_to_pfn(page), canon_pgprot(prot)));
 		break;
 	case PG_LEVEL_2M:
+		/* We need to check if it's a 2M page or 1GB page before retrieve
+		 * pgprot info, as each one will be extracted from a different
+		 * page table levels */
+		msk_clr = pmd_pgprot(*(pmd_t*)pte);
 	case PG_LEVEL_1G: {
 		struct cpa_data cpa;
 		int do_split;
+
+		msk_clr = pud_pgprot(*(pud_t*)pte);
 
 		memset(&cpa, 0, sizeof(cpa));
 		cpa.vaddr = kaddr;
 		cpa.pages = &page;
 		cpa.mask_set = prot;
-		cpa.mask_clr = prot;
+		cpa.mask_clr = msk_clr;
 		cpa.numpages = 1;
 		cpa.flags = 0;
 		cpa.curpage = 0;
