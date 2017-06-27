@@ -3,6 +3,7 @@
  *
  *	Authors:
  *		- Marco Benatto <marco.antonio.780@gmail.com>
+ *		- Tycho Andersen <tycho@docker.com>
  *
  */
 
