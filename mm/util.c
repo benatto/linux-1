@@ -4,6 +4,7 @@
 #include <linux/compiler.h>
 #include <linux/export.h>
 #include <linux/err.h>
+#include <linux/file.h>
 #include <linux/sched.h>
 #include <linux/sched/mm.h>
 #include <linux/sched/task_stack.h>
@@ -317,6 +318,29 @@ int __weak get_user_pages_fast(unsigned long start,
 }
 EXPORT_SYMBOL_GPL(get_user_pages_fast);
 
+static struct file *map_hugetlb_setup(unsigned long *len, unsigned long flags)
+{
+	struct user_struct *user = NULL;
+	struct hstate *hs;
+
+	hs = hstate_sizelog((flags >> MAP_HUGE_SHIFT) & MAP_HUGE_MASK);
+	if (!hs)
+		return ERR_PTR(-EINVAL);
+
+	*len = ALIGN(*len, huge_page_size(hs));
+
+	/*
+	 * VM_NORESERVE is used because the reservations will be
+	 * taken when vm_ops->mmap() is called
+	 * A dummy user value is used because we are not locking
+	 * memory so no accounting is necessary
+	 */
+	return hugetlb_file_setup(HUGETLB_ANON_FILE, *len,
+			VM_NORESERVE,
+			&user, HUGETLB_ANONHUGE_INODE,
+			(flags >> MAP_HUGE_SHIFT) & MAP_HUGE_MASK);
+}
+
 unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 	unsigned long len, unsigned long prot,
 	unsigned long flag, unsigned long pgoff)
@@ -325,6 +349,13 @@ unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 	struct mm_struct *mm = current->mm;
 	unsigned long populate;
 	LIST_HEAD(uf);
+	bool setup_hugefile = flag & MAP_ANONYMOUS && flag & MAP_HUGETLB;
+
+	if (setup_hugefile) {
+		file = map_hugetlb_setup(&len, flag);
+		if (IS_ERR(file))
+			return PTR_ERR(file);
+	}
 
 	ret = security_mmap_file(file, prot, flag);
 	if (!ret) {
@@ -336,6 +367,8 @@ unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 		userfaultfd_unmap_complete(mm, &uf);
 		if (populate)
 			mm_populate(ret, populate);
+	} else if (setup_hugefile) {
+		fput(file);
 	}
 	return ret;
 }
