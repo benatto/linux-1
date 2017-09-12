@@ -7,6 +7,7 @@
  *   Juerg Haefliger <juerg.haefliger@hpe.com>
  *   Vasileios P. Kemerlis <vpk@cs.brown.edu>
  *   Tycho Andersen <tycho@docker.com>
+ *   Marco Benatto <marco.antonio.780@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published by
@@ -27,6 +28,9 @@ void set_kpte(void *kaddr, struct page *page, pgprot_t prot);
 void xpfo_dma_map_unmap_area(bool map, const void *addr, size_t size,
 				    enum dma_data_direction dir);
 void xpfo_flush_kernel_tlb(struct page *page, int order);
+
+#define xpfo_kmap_atomic(kaddr, page) \
+	xpfo_kmap(kaddr, page)
 
 void xpfo_kmap(void *kaddr, struct page *page);
 void xpfo_kunmap(void *kaddr, struct page *page);
