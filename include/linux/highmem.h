@@ -83,7 +83,7 @@ static inline void *kmap_atomic(struct page *page)
 
 static inline void __kunmap_atomic(void *addr)
 {
-	xpfo_kunmap(addr, virt_to_page(addr));
+	xpfo_kunmap_atomic(addr, virt_to_page(addr));
 	pagefault_enable();
 	preempt_enable();
 }

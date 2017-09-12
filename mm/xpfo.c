@@ -192,7 +192,7 @@ void xpfo_kmap(void *kaddr, struct page *page)
 }
 EXPORT_SYMBOL(xpfo_kmap);
 
-void xpfo_kunmap(void *kaddr, struct page *page)
+static void xpfo_do_unmap(void *kaddr, struct page *page, int atomic)
 {
 	struct xpfo *xpfo;
 
@@ -221,12 +221,28 @@ void xpfo_kunmap(void *kaddr, struct page *page)
 		     "xpfo: unmapping already unmapped page\n");
 		set_bit(XPFO_PAGE_UNMAPPED, &xpfo->flags);
 		set_kpte(kaddr, page, __pgprot(0));
-		xpfo_flush_kernel_tlb(page, 0);
+
+		if (!atomic) {
+			xpfo_flush_kernel_tlb(page, 0);
+		} else {
+			__flush_tlb_single((unsigned long)kaddr);
+		}
 	}
 
 	spin_unlock(&xpfo->maplock);
 }
+
+void xpfo_kunmap(void *kaddr, struct page *page)
+{
+	xpfo_do_unmap(kaddr, page, 0);
+}
 EXPORT_SYMBOL(xpfo_kunmap);
+
+void xpfo_kunmap_atomic(void *kaddr, struct page *page)
+{
+	xpfo_do_unmap(kaddr, page, 1);
+}
+EXPORT_SYMBOL(xpfo_kunmap_atomic);
 
 bool xpfo_page_is_unmapped(struct page *page)
 {

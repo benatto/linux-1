@@ -30,6 +30,7 @@ void xpfo_flush_kernel_tlb(struct page *page, int order);
 
 void xpfo_kmap(void *kaddr, struct page *page);
 void xpfo_kunmap(void *kaddr, struct page *page);
+void xpfo_kunmap_atomic(void *kaddr, struct page *page);
 void xpfo_alloc_pages(struct page *page, int order, gfp_t gfp);
 void xpfo_free_pages(struct page *page, int order);
 
