@@ -88,6 +88,16 @@ inline void xpfo_flush_kernel_tlb(struct page *page, int order)
 	int level;
 	unsigned long size, kaddr;
 
+	/*
+	 * We eventually may get blocked waiting other CPU's to
+	 * execute tlb flush when calling flush_tlb_kernel_range
+	 * so anottate here as might_sleep() as we cannot call
+	 * xpfo_flush_kernel_tlb() under hardware interrupt context,
+	 * bottom-halves or with irq_disabled()
+	 */
+
+	might_sleep();
+
 	kaddr = (unsigned long)page_address(page);
 
 	if (unlikely(!lookup_address(kaddr, &level))) {
